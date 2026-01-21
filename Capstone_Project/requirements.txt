@@ -10,3 +10,4 @@ uvicorn
 textblob
 deep-translator
 langdetect
+PyYAML
