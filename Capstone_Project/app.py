@@ -12,6 +12,7 @@ import translation
 from config import AppConfig
 import logger as log_setup
 import logging
+import admin 
 
 # 1. SETUP
 cfg = AppConfig.load()
@@ -38,6 +39,8 @@ if not st.session_state.logged_in:
     with col2:
         st.markdown("<h2 style='text-align: center; color: #4CAF50;'>🔐 Login</h2>", unsafe_allow_html=True)
         tab1, tab2 = st.tabs(["Login", "Register"])
+        
+        # --- LOGIN TAB ---
         with tab1:
             with st.form("login_form"):
                 u = st.text_input("Username")
@@ -48,20 +51,57 @@ if not st.session_state.logged_in:
                         st.session_state.logged_in = True
                         st.session_state.user_info = user
                         st.rerun()
-                    else: st.error("Invalid credentials")
+                    else: 
+                        st.error("Invalid credentials")
+                        
+        # --- REGISTER TAB ---
         with tab2:
             with st.form("reg_form"):
-                e = st.text_input("Email"); u = st.text_input("User"); p = st.text_input("Pass", type="password")
+                e = st.text_input("Email")
+                u = st.text_input("Username")
+                p = st.text_input("Password", type="password")
+                p2 = st.text_input("Retype Password", type="password") # <-- NEW FIELD
+                
                 if st.form_submit_button("Create Account", use_container_width=True):
-                    s, m = auth_sys.register(e, u, p)
-                    if s: st.success("Created! Login now."); system_logger.info(f"New user: {u}")
-                    else: st.error(m)
+                    # <-- VALIDATION LOGIC ADDED HERE -->
+                    if p != p2:
+                        st.error("⚠️ Passwords do not match! Please try again.")
+                    elif len(p) == 0:
+                        st.warning("⚠️ Password cannot be empty.")
+                    else:
+                        # Proceed with registration only if passwords match
+                        s, m = auth_sys.register(e, u, p)
+                        if s: 
+                            st.success("🎉 Created! You can now log in.")
+                            system_logger.info(f"New user: {u}")
+                        else: 
+                            st.error(m)
     st.stop()
 
 # 4. RENDER SIDEBAR
 selected = sidebar.show_sidebar()
 
 # --- ROUTING LOGIC (Clean & Modular) ---
+
+# --- ROUTING LOGIC ---
+
+if selected == "Admin":
+    # Double security check to prevent people from forcing their way in
+    current_user = st.session_state.user_info.get('username')
+    if current_user == "admin" or current_user == "johnny":
+        admin.show()
+    else:
+        st.error("🔒 Access Denied. Administrator privileges required.")
+    st.stop()
+
+if selected == "Customer":
+    # Double security check
+    current_user = st.session_state.user_info.get('username')
+    if current_user == "admin" or current_user == "johnny":
+        admin.show()  # Still calls admin.py, but the tab is named Customer!
+    else:
+        st.error("🔒 Access Denied. Administrator privileges required.")
+    st.stop()
 
 if selected == "Settings":
     setting.show()
