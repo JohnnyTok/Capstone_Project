@@ -14,7 +14,7 @@ def show_sidebar():
         # 1. Header (Logo/Title)
         ui.show_sidebar_header()
         
-        # 2. Enhanced Profile Card (MOVED TO TOP)
+        # 2. Enhanced Profile Card
         if st.session_state.user_info:
             plan = st.session_state.user_info.get('plan', 'free').upper()
             username = st.session_state.user_info.get('username', 'User')
@@ -43,12 +43,28 @@ def show_sidebar():
             </div>
             """, unsafe_allow_html=True)
 
-        # 3. Navigation Menu
-        # I've tweaked the styles here to blend better with the new dark gradient
+        # --- ADMIN LOGIC INTEGRATION ---
+        # We define the default lists first
+        menu_options = ["Dashboard", "API Connect", "Subscription", "Settings"]
+        menu_icons = ["speedometer2", "cloud-download", "credit-card", "gear"]
+
+        # Check if the logged-in user is the Admin, then add the Admin tab to the lists
+        if st.session_state.user_info:
+            current_user = st.session_state.user_info.get('username')
+            if current_user == "admin" or current_user == "johnny":
+                menu_options.append("Customer")
+                menu_icons.append("shield-lock-fill")
+
+        # Finally, add the Logout button at the very bottom
+        menu_options.append("Logout")
+        menu_icons.append("box-arrow-right")
+        # -------------------------------
+
+        # 3. Navigation Menu (Keeping YOUR nice custom styles!)
         selected = option_menu(
             menu_title=None,
-            options=["Dashboard", "API Connect", "Subscription", "Settings", "Logout"], 
-            icons=["speedometer2", "cloud-download", "credit-card", "gear", "box-arrow-right"], 
+            options=menu_options, 
+            icons=menu_icons, 
             menu_icon="cast", 
             default_index=0,
             styles={
