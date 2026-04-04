@@ -1,6 +1,27 @@
 import streamlit as st
 import time
 import styles as ui
+import sqlite3
+
+def update_username_in_db(old_username, new_username):
+    """Updates the username in the database and checks for duplicates."""
+    try:
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        
+        # Security Check: Does the new username already exist?
+        c.execute("SELECT username FROM users WHERE username = ?", (new_username,))
+        if c.fetchone() is not None:
+            conn.close()
+            return False, "Username is already taken by another account."
+            
+        # If available, update the database
+        c.execute("UPDATE users SET username = ? WHERE username = ?", (new_username, old_username))
+        conn.commit()
+        conn.close()
+        return True, "Success"
+    except Exception as e:
+        return False, str(e)
 
 def show():
     """
@@ -58,24 +79,53 @@ def show():
     with tab_account:
         st.subheader("Profile Management")
         
-        # Read-only User Info
         if st.session_state.user_info:
             user = st.session_state.user_info
+            current_username = user['username']
             
             # Profile Header
             c_av, c_det = st.columns([1, 4])
             with c_av:
                 st.markdown(f"""
                 <div style="width: 80px; height: 80px; border-radius: 50%; background-color: #5d5fef; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: bold; color: white;">
-                    {user['username'][:2].upper()}
+                    {current_username[:2].upper()}
                 </div>
                 """, unsafe_allow_html=True)
             with c_det:
-                st.markdown(f"### {user['username']}")
+                st.markdown(f"### {current_username}")
                 st.caption(f"Member since: {user.get('created_at', '2025-01-01')}")
-                st.caption(f"Plan: **{user.get('plan', 'free').upper()}**")
+                # Updated the default plan from 'free' to 'basic' to match your system rules!
+                st.caption(f"Plan: **{user.get('plan', 'basic').upper()}**")
 
             st.divider()
+            
+            # --- NEW: UPDATE PROFILE FORM ---
+            st.markdown("#### 👤 Update Username")
+            with st.form("update_username_form"):
+                st.info("Changing your username will update your login credentials.")
+                new_username = st.text_input("New Username", value=current_username)
+                
+                submit_username = st.form_submit_button("Save Username", type="primary")
+                
+                if submit_username:
+                    if len(new_username) < 3:
+                        st.warning("⚠️ Username must be at least 3 characters long.")
+                    elif new_username.lower() == current_username.lower():
+                        st.info("⚠️ Please enter a different username.")
+                    else:
+                        success, message = update_username_in_db(current_username, new_username)
+                        if success:
+                            st.success(f"✅ Username successfully changed to '{new_username}'!")
+                            
+                            # Update the Streamlit memory so the whole app (and sidebar) changes instantly
+                            st.session_state.user_info['username'] = new_username
+                            
+                            time.sleep(1.5)
+                            st.rerun()
+                        else:
+                            st.error(f"⚠️ {message}")
+
+            st.markdown("---")
             
             # Change Password Form
             st.markdown("#### 🔐 Security")
@@ -87,6 +137,8 @@ def show():
                 if st.form_submit_button("Update Password"):
                     st.toast("Password updated successfully", icon="🔒")
 
+            st.markdown("---")
+            
             # Danger Zone
             st.markdown("#### 🚨 Danger Zone")
             if st.button("Delete Account", type="secondary"):
