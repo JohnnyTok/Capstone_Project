@@ -35,13 +35,16 @@ auth_sys = auth.AuthSystem()
 
 # 3. AUTH (LOGIN SCREEN)
 if not st.session_state.logged_in:
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # Initialize the memory state to show the login form first
+    if 'auth_view' not in st.session_state:
+        st.session_state.auth_view = 'login'
+
+    col1, col2, col3 = st.columns([1, 1.2, 1]) # Made center column slightly wider for the form
     with col2:
-        st.markdown("<h2 style='text-align: center; color: #4CAF50;'>🔐 Login</h2>", unsafe_allow_html=True)
-        tab1, tab2 = st.tabs(["Login", "Register"])
-        
-        # --- LOGIN TAB ---
-        with tab1:
+        # --- VIEW: LOGIN FORM ---
+        if st.session_state.auth_view == 'login':
+            st.markdown("<h2 style='text-align: center; color: #4CAF50;'>🔐 Login</h2>", unsafe_allow_html=True)
+            
             with st.form("login_form"):
                 u = st.text_input("Username")
                 p = st.text_input("Password", type="password")
@@ -53,29 +56,46 @@ if not st.session_state.logged_in:
                         st.rerun()
                     else: 
                         st.error("Invalid credentials")
-                        
-        # --- REGISTER TAB ---
-        with tab2:
+            
+            # Button to switch to Register view
+            if st.button("Don't have an account? Register here", use_container_width=True):
+                st.session_state.auth_view = 'register'
+                st.rerun()
+
+        # --- VIEW: REGISTER FORM ---
+        elif st.session_state.auth_view == 'register':
+            st.markdown("<h2 style='text-align: center; color: #5d5fef;'>📝 Create Account</h2>", unsafe_allow_html=True)
+            
             with st.form("reg_form"):
                 e = st.text_input("Email")
                 u = st.text_input("Username")
                 p = st.text_input("Password", type="password")
-                p2 = st.text_input("Retype Password", type="password") # <-- NEW FIELD
+                p2 = st.text_input("Retype Password", type="password")
                 
                 if st.form_submit_button("Create Account", use_container_width=True):
-                    # <-- VALIDATION LOGIC ADDED HERE -->
                     if p != p2:
                         st.error("⚠️ Passwords do not match! Please try again.")
                     elif len(p) == 0:
                         st.warning("⚠️ Password cannot be empty.")
                     else:
-                        # Proceed with registration only if passwords match
                         s, m = auth_sys.register(e, u, p)
                         if s: 
-                            st.success("🎉 Created! You can now log in.")
+                            st.success("🎉 Created! Redirecting to Login...")
                             system_logger.info(f"New user: {u}")
+                            
+                            # THE REDIRECT LOGIC
+                            import time
+                            time.sleep(1.5) # Wait 1.5 seconds so they can read the success message
+                            st.session_state.auth_view = 'login' # Flip the view back to Login
+                            st.rerun() # Refresh the page instantly
                         else: 
                             st.error(m)
+            
+            # Button to switch back to Login view manually
+            if st.button("Already have an account? Log In", use_container_width=True):
+                st.session_state.auth_view = 'login'
+                st.rerun()
+    
     st.stop()
 
 # 4. RENDER SIDEBAR
