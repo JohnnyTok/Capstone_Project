@@ -252,8 +252,8 @@ class ReportGenerator:
                         txt = clean_text(row['Review'])[:100] + "..."
                         pdf.cell(190, 6, f"- {txt} ({row['Sentiment Score']:.2f})", 0, 1)
 
-            # Return binary bytes
-            return bytes(pdf.output(dest='S'))
+# Return binary bytes with Latin-1 encoding
+            return pdf.output(dest='S').encode('latin-1')
             
         except Exception as e:
             logger.error(f"Error generating PDF: {e}")
@@ -261,4 +261,4 @@ class ReportGenerator:
             pdf.add_page()
             pdf.set_font('Arial', 'B', 14)
             pdf.cell(190, 10, f"Error generating report: {str(e)}", 0, 1)
-            return bytes(pdf.output(dest='S'))
+            return pdf.output(dest='S').encode('latin-1')
