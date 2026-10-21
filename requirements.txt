@@ -10,3 +10,5 @@ xlsxwriter
 nltk
 vaderSentiment
 deep-translator
+transformers
+torch
