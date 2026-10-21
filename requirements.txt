@@ -12,3 +12,4 @@ vaderSentiment
 deep-translator
 transformers
 torch
+redis
