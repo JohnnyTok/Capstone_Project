@@ -1,0 +1,12 @@
+streamlit
+pandas
+plotly
+textblob
+langdetect
+streamlit-option-menu
+PyYAML
+fpdf
+xlsxwriter
+nltk
+vaderSentiment
+deep-translator
